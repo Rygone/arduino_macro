@@ -282,7 +282,7 @@ bool unlock(unsigned long key) {
 bool extract_key(String data, unsigned long* key) {
   *key = 0;
   for (int i = 0; i < data.length(); i++) {
-    if(data[i] < '0' || data[i] > '0' + buttons_size - 1) {
+    if(data[i] <= '0' || data[i] > '0' + buttons_size - 2) {
       return false;
     }
     int p = data[i] - '0';
@@ -383,7 +383,7 @@ void press_lock(int idx) {
   } else if (idx == buttons_size - 1) {
     unlock(key);
   } else {
-    key = key << 4 | (idx-1);
+    key = key << 4 | (idx);
   }
 }
 
