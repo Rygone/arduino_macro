@@ -38,12 +38,6 @@ void setup() {
   RGB(255, 0, 0);
 }
 
-unsigned int iter = 0;
-unsigned int div_f = 0xFFFF / 3;
-unsigned int div_p = div_f + (unsigned int)5;
-unsigned int div_m = div_f - (unsigned int)5;
-#define apply(x) (x = (x < div_m) ? x / ((div_m) / 255) : ((x < div_p) ? 255 : ((x < 2 * div_m) ? 255 - (x - div_f) / ((div_m) / 255) : 0)))
-
 void loop() {
   RGB(0, 0, 255);
   unsigned long buttons = BUTTONS;

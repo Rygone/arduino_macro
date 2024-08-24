@@ -1,81 +1,25 @@
-#include <Keyboard.h>
-#include <EEPROM.h>
-#include "setup.h"
-
 #define BAUD_RATE           9600
 #define TIMEOUT             100
 
-#define DATA_OFFSET         2
-#define DATA_CUT            0
-#define DATA_SIZE           32
-#define INT_DATA_SIZE       (DATA_SIZE/sizeof(int))
-#define LONG_DATA_SIZE      (DATA_SIZE/sizeof(long))
+#include "setup.h"
+#include "write.h"
+#include "store.h"
 
-#define on                  0
-#define off                 1
-#define clk                 2
-#define swh                 3
+// select the pins to use
+#if defined(ARDUINO_AVR_LEONARDO)
+#define Type                "Leonardo"
+#define BUTTONS             0x1DC7FF
+#define RGB(r, g, b)        {}
+#else
+#define Type                "ESP32"
+#define BUTTONS             0x1FE3FFF
+#define RGB(r, g, b)        {analogWrite(14, 255-r); analogWrite(15, 255-g); analogWrite(16, 255-b);}
+#endif
 
-#define pressed(i)          (pressed_status &   (1 << i))
-#define swap_pressed(i)     (pressed_status ^=  (1 << i))
-#define reset_pressed(i)    (pressed_status &= ~(1 << i))
 
+// define the buttons
 bool lock = true;
 unsigned long key = 0;
-
-typedef struct {
-  String name;
-  char char_;
-  unsigned int code;
-  unsigned int type;
-  int status;
-} key_t;
-
-const key_t custom_key[] = {
-  {"win_on",    char(0x01), KEY_LEFT_GUI,    on,  0},
-  {"win_off",   char(0x02), KEY_LEFT_GUI,    off, 0},
-  {"ctrl_on",   char(0x03), KEY_LEFT_CTRL,   on,  1},
-  {"ctrl_off",  char(0x04), KEY_LEFT_CTRL,   off, 1},
-  {"alt_on",    char(0x05), KEY_LEFT_ALT,    on,  2},
-  {"alt_off",   char(0x06), KEY_LEFT_ALT,    off, 2},
-  {"shift_on",  char(0x18), KEY_LEFT_SHIFT,  on,  3},
-  {"shift_off", char(0x19), KEY_LEFT_SHIFT,  off, 3},
-  {"esc",       char(0x13), KEY_ESC,         clk,-1},
-  {"tab",       char(0x1a), KEY_TAB,         clk,-1},
-  {"caps",      char(0x17), KEY_CAPS_LOCK,   swh, 4},
-  {"enter",     char(0x14), KEY_RETURN,      clk,-1},
-  {"del",       char(0x0b), KEY_DELETE,      clk,-1},
-  {"back",      char(0x0c), KEY_BACKSPACE,   clk,-1},
-  {"up",        char(0x1e), KEY_UP_ARROW,    clk,-1},
-  {"down",      char(0x1f), KEY_DOWN_ARROW,  clk,-1},
-  {"left",      char(0x11), KEY_LEFT_ARROW,  clk,-1},
-  {"right",     char(0x10), KEY_RIGHT_ARROW, clk,-1},
-};
-const int custom_size = sizeof(custom_key) / sizeof(custom_key[0]);
-
-typedef struct {
-  bool status;
-  bool type;
-  char code;
-} status_t;
-
-status_t status[] = {
-  {false, false, char(0)},
-  {false, false, char(0)},
-  {false, false, char(0)},
-  {false, false, char(0)}
-};
-const int status_size = sizeof(status) / sizeof(status[0]);
-
-int pressed_status = 0;
-
-typedef union {
-  byte          b[DATA_SIZE];
-  char          c[DATA_SIZE];
-  int           i[INT_DATA_SIZE];
-  unsigned int  u[INT_DATA_SIZE];
-  unsigned long l[LONG_DATA_SIZE];
-} data_t;
 
 typedef struct {
   String name;
@@ -83,9 +27,10 @@ typedef struct {
   bool lock;
 } command_t;
 
-const int keys_size = sizeof(cipher_keys) / DATA_SIZE;
-
 void setup() {
+
+  // check if the key is valid
+  get_true_key();
 
   // set the lock
   lock = true;
@@ -114,69 +59,7 @@ void setup() {
   Serial.setTimeout(TIMEOUT);
 }
 
-void write(String data) {
-  // stop serial and start keyboard
-  Serial.end();
-  delay(10);
-  Keyboard.begin();
-  delay(10);
-
-  // write the data
-  int len = data.length();
-  for (int i = 0; i < len; i++) {
-    bool custom = false;
-    for (int j = 0; j < custom_size; j++) {
-      if (data[i] == custom_key[j].char_) {
-        if (custom_key[j].type == on) {
-          status[custom_key[j].status].status = true;
-          Keyboard.press(custom_key[j].code);
-        } else if (custom_key[j].type == off) {
-          status[custom_key[j].status].status = false;
-          Keyboard.release(custom_key[j].code);
-        } else if (custom_key[j].type == clk) {
-          Keyboard.press(custom_key[j].code);
-          delay(1);
-          Keyboard.release(custom_key[j].code);
-        } else if (custom_key[j].type == swh) {
-          status[custom_key[j].status].status = !status[custom_key[j].status].status;
-          Keyboard.press(custom_key[j].code);
-          delay(1);
-          Keyboard.release(custom_key[j].code);
-        }
-        custom = true;
-        break;
-      }
-    }
-    if (!custom) {
-      Keyboard.write(data[i]);
-    }
-    delay(1);
-  }
-
-  // release the keys unreleased
-  for (int i = 0; i < status_size; i++) {
-    if (status[i].status) {
-      if (status[i].type) {
-        Keyboard.press(status[i].code);
-        delay(10);
-      }
-      Keyboard.release(status[i].code);
-    }
-  }
-  delay(10);
-
-  // stop keyboard and start serial
-  Keyboard.end();
-  delay(10);
-  Serial.begin(BAUD_RATE);
-  Serial.setTimeout(TIMEOUT);
-}
-
-int len_() {
-  return (EEPROM.length() / DATA_SIZE) - DATA_OFFSET - DATA_CUT;
-}
-
-void len__(String data) {
+void len(String data) {
   send(String(len_() - DATA_OFFSET - DATA_CUT));
 }
 
@@ -186,90 +69,6 @@ String hex(int i) {
     str = "0" + str;
   }
   return str;
-}
-
-int read(data_t* data, int i) {
-  int j = i / 2;
-  int s = i % 2;
-  int r = (data->i[j] >> (s ? 0 : 8)) & 0xFF;
-  return r;
-}
-
-void write(data_t* data, int i, int v) {
-  int j = i / 2;
-  int s = i % 2;
-  int r = (data->i[j] & (s ? 0xFF00 : 0xFF)) | ((v & 0xFF) << (s ? 0 : 8));
-  data->i[j] = r;
-}
-
-void shuffle(int i, data_t* data) {
-  int j = (i + 1) % DATA_SIZE;
-  int s = read(data, i);
-  int l = (j + ((s ^ (s >> 4)) & 0xF)) % DATA_SIZE;
-
-  int t = read(data, l);
-  write(data, l, read(data, j));
-  write(data, j, t);
-}
-
-bool save_(int idx, data_t* data) {
-  // check if the index is valid
-  if (idx >= len_() || idx < 0) {
-    return false;
-  }
-
-  // encrypt the data
-  for (int k = 0; k < keys_size; k++) {
-    const int key = k * INT_DATA_SIZE;
-
-    // cipher the data
-    for (int i = 0; i < INT_DATA_SIZE; i++) {
-      data->u[i] ^= cipher_keys[i + key];
-    }
-
-    // shuffle the data
-    for (int i = 0; i < DATA_SIZE; i++) {
-      shuffle(i, data);
-    }
-  }
-
-  // save the data
-  int offset = idx * DATA_SIZE;
-  for (int i = 0; i < DATA_SIZE; i++) {
-    EEPROM.update(i + offset, (int)data->b[i]);
-  }
-
-  return true;
-}
-
-bool load_(int idx, data_t* data) {
-  // check if the index is valid
-  if (idx >= len_() || idx < 0) {
-    return false;
-  }
-
-  // load the data
-  int offset = idx * DATA_SIZE;
-  for (int i = 0; i < DATA_SIZE; i++) {
-    data->b[i] = EEPROM.read(i + offset);
-  }
-
-  // decrypt the data
-  for (int k = keys_size - 1; k >= 0; k--) {
-    const int key = k * INT_DATA_SIZE;
-
-    // shuffle the data
-    for (int i = DATA_SIZE - 1; i >= 0; i--) {
-      shuffle(i, data);
-    }
-
-    // cipher the data
-    for (int i = INT_DATA_SIZE - 1; i >= 0; i--) {
-      data->u[i] ^= cipher_keys[i + key];
-    }
-  }
-
-  return true;
 }
 
 int extract_int(String* data_ptr) {
@@ -315,39 +114,6 @@ int extract_int(String* data_ptr) {
 
 void send(String data) {
   Serial.println(data);
-}
-
-bool str_to_data(String* str, data_t* data) {
-  // check if the data is too long
-  int len = str->length();
-  if (len + 1 > DATA_SIZE) {
-    return false;
-  }
-
-  // copy the data
-  int i = 0;
-  for (; i < len; i++) {
-    data->c[i] = (*str)[i];
-  }
-  data->b[i++] = 0;
-  for (; i < DATA_SIZE; i++) {
-    char r = (char)random(32, 127);
-    data->c[i] = r;
-  }
-
-  return true;
-}
-
-bool data_to_str(data_t* data, String* str) {
-  // load the data
-  for (int i = 0; i < DATA_SIZE; i++) {
-    if (data->c[i] == 0) {
-      break;
-    }
-    *str += data->c[i];
-  }
-
-  return true;
 }
 
 bool check_idx(int* idx) {
@@ -495,6 +261,7 @@ unsigned long get_true_key() {
   load_(0, &d);
   for (int i = 1; i < LONG_DATA_SIZE; i++) {
     if (d.l[i] != d.l[0]) {
+      clear_();
       return 0;
     }
   }
@@ -599,26 +366,25 @@ const command_t commands[] = {
   {"send",    send,    false},
   {"keycode", keycode, false},
   {"locked",  locked,  false},
-  {"len",     len__,   false},
+  {"len",     len,     false},
   {"save",    save,    true },
   {"load",    load,    true },
   {"clear",   clear,   true },
   {"unlock",  unlock_, false},
   {"lock",    lock_,   false},
   {"key",     key_,    true},
-  {"info",    info,    true},
+  {"info",    info,    false},
 };
 const int commands_size = sizeof(commands) / sizeof(commands[0]);
 
 void press_lock(int idx) {
   if (idx == 0) {
     key = 0;
-  } else if (idx == 1) {
-    key = key >> 4;
+  } else if (idx == buttons_size - 1) {
+    unlock(key);
   } else {
     key = key << 4 | (idx-1);
   }
-  unlock(key);
 }
 
 void press_unlock(int idx) {

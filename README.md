@@ -21,7 +21,7 @@ Depending on the board you use, you can use the Arduino Leonardo as a USB keyboa
     python map_buttons.py
     ```
 8. Flash the `arduino_macro.ino` file to your Arduino.
-9. Run the `init_terminal.py` file to initialize the terminal.
+9. Open the `terminal` folder and run the `init_terminal.py` file to initialize the terminal.
     ```bash
     python init_terminal.py
     ```

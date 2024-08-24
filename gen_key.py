@@ -21,8 +21,9 @@ if os.path.exists(path):
         lines = lines[:idx_start] + lines[idx_end+1:]
     if len(lines) > 0 and lines[-1] != '':
         lines.append('')
+    while lines[0] == '':
+        lines.pop(0)
 #endregion
-
 
 #region generate random keys
 print('Generating keys')
