@@ -25,7 +25,9 @@ Depending on the board you use, you can use the Arduino Leonardo as a USB keyboa
     ```bash
     python init_terminal.py
     ```
-<!-- 10. Run the `terminal.py` file to use the macro keyboard.
+10. Run the `terminal.py` file to use communication with the Arduino. (note: the arduino can change the COM port, so you may need to modify the `com.txt` file)
     ```bash
     python terminal.py
-    ``` -->
+    ```
+11. Once the terminal is open, you can send the commands `help` to see the available commands.
+12. Once the Arduino setup as you want, you no longer need to run the `terminal.py` file, you can use the Arduino as a macro keyboard.

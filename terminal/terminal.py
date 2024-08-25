@@ -148,6 +148,7 @@ nb_per_line = 16
 # print()
 
 nb_per_line //= 2
+print()
 print('custom')
 for i, (k, v) in enumerate(sorted(custom.items())):
     print(f'{k:<11} : {v}', end=',    ' if i%nb_per_line != nb_per_line-1 else ',\n')
@@ -159,19 +160,19 @@ print()
 #region loop
 try:
     while True:
-        command = input('>').strip()
+        command = input('> ').strip()
         if command.startswith('save '):
             command = command.split()
             if len(command) > 2:
                 command = command[0] + ' ' + command[1] + ' ' + convert(' '.join(command[2:]))
-        elif command.startswith('echo ') or command.startswith('write '):
+        elif command.startswith('echo ') or command.startswith('write ') or command.startswith('send '):
             command = command.split()
             if len(command) > 1:
                 command = command[0] + ' ' + convert(' '.join(command[1:]))
         write(command)
         data = read()
         while len(data) > 0:
-            print(' ' + data)
+            print(data)
             data = read()
 
 except KeyboardInterrupt:
