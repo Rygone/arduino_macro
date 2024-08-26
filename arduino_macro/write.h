@@ -68,9 +68,7 @@ const int custom_size = sizeof(custom_key) / sizeof(custom_key[0]);
 
 // write the data
 void write(String data) {
-  // stop serial and start keyboard
-  Serial.end();
-  delay(10);
+  // start keyboard
   Keyboard.begin();
   delay(10);
 
@@ -120,9 +118,6 @@ void write(String data) {
   }
   delay(10);
 
-  // stop keyboard and start serial
+  // stop keyboard
   Keyboard.end();
-  delay(10);
-  Serial.begin(BAUD_RATE);
-  Serial.setTimeout(TIMEOUT);
 }

@@ -1,6 +1,3 @@
-#define BAUD_RATE           9600
-#define TIMEOUT             100
-
 #include "setup.h"
 #include "write.h"
 #include "store.h"
@@ -16,6 +13,8 @@
 #define RGB(r, g, b)        {analogWrite(14, 255-r); analogWrite(15, 255-g); analogWrite(16, 255-b);}
 #endif
 
+#define BAUD_RATE           9600
+#define TIMEOUT             100
 
 // define the buttons
 bool lock = true;
@@ -25,6 +24,8 @@ typedef struct {
   String name;
   void (*function)(String);
   bool lock;
+  String usage;
+  // String help;
 } command_t;
 
 void setup() {
@@ -49,10 +50,6 @@ void setup() {
   for (int i = 0; i < buttons_size; i++) {
     pinMode(buttons[i], INPUT_PULLUP);
   }
-
-  // start the serial
-  Serial.begin(BAUD_RATE);
-  Serial.setTimeout(TIMEOUT);
 
   // start the serial
   Serial.begin(BAUD_RATE);
@@ -243,8 +240,23 @@ void keycode(String data) {
   }
 }
 
-void echo(String data) {
+// write the data
+void write_(String data) {
+  // stop serial
+  Serial.end();
+  delay(10);
+
+  // write the data
   write(data);
+
+  // start serial
+  delay(10);
+  Serial.begin(BAUD_RATE);
+  Serial.setTimeout(TIMEOUT);
+}
+
+void echo(String data) {
+  write_(data);
   send(data);
 }
 
@@ -361,19 +373,19 @@ void info(String data) {
 }
 
 const command_t commands[] = {
-  {"echo",    echo,    false},
-  {"write",   write,   false},
-  {"send",    send,    false},
-  {"keycode", keycode, false},
-  {"locked",  locked,  false},
-  {"len",     len,     false},
-  {"save",    save,    true },
-  {"load",    load,    true },
-  {"clear",   clear,   true },
-  {"unlock",  unlock_, false},
-  {"lock",    lock_,   false},
-  {"key",     key_,    true},
-  {"info",    info,    false},
+  {"echo",    echo,    false, "echo <data>",         },//"write the data and send it back"},
+  {"write",   write_,  false, "write <data>",        },//"write the data"                 },
+  {"send",    send,    false, "send <data>",         },//"send the data"                  },
+  {"keycode", keycode, false, "keycode [<name>]",    },//"get the keycode of the key"     },
+  {"locked",  locked,  false, "locked",              },//"check if the device is locked"  },
+  {"len",     len,     false, "len",                 },//"get the number of data space"   },
+  {"save",    save,    true,  "save <index> <data>", },//"save the data at index"         },
+  {"load",    load,    true,  "load <index>",        },//"load the data at index"         },
+  {"clear",   clear,   true,  "clear [<index>]",     },//"clear the data (default all)"   },
+  {"unlock",  unlock_, false, "unlock <key>",        },//"unlock the device (default 0)"  },
+  {"lock",    lock_,   false, "lock",                },//"lock the device"                },
+  {"key",     key_,    true,  "key [<key>]",         },//"get/set the key to unlock"      },
+  {"info",    info,    false, "info",                },//"get the information"            },
 };
 const int commands_size = sizeof(commands) / sizeof(commands[0]);
 
@@ -442,13 +454,18 @@ void command(String data) {
   if(data.startsWith("help")) {
     send("Commands:");
     for (int i = 0; i < commands_size; i++) {
-      send("  " + commands[i].name + (commands[i].lock && lock ? " (locked)" : ""));
+      String usage = "  " + commands[i].usage;
+      String lock_ = (commands[i].lock && lock ? "  (locked)" : "");
+      while (usage.length() < 21 and lock_.length() > 0) {
+        usage += " ";
+      }
+      send(usage + lock_);
     }
     return;
   }
 
   // send unknown command
-  send("Unknown command, use help to get the list of commands");
+  send("Unknown command, use 'help' to get the list of commands");
 }
 
 void loop() {
