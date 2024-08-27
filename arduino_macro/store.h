@@ -7,6 +7,21 @@
 #define INT_DATA_SIZE       (DATA_SIZE/sizeof(int))
 #define LONG_DATA_SIZE      (DATA_SIZE/sizeof(long))
 
+// define the
+#if defined(ARDUINO_AVR_LEONARDO)
+
+#define EEPROM_LEN          EEPROM.length()
+#define EEPROM_READ(i)      EEPROM.read(i)
+#define EEPROM_WRITE(i, v)  EEPROM.update(i, v)
+
+#else
+
+#define EEPROM_LEN          EEPROM.length()
+#define EEPROM_READ(i)      EEPROM.read(i)
+#define EEPROM_WRITE(i, v)  {if (EEPROM.read(i) != v) EEPROM.write(i, v);}
+
+#endif
+
 const int keys_size = sizeof(cipher_keys) / DATA_SIZE;
 
 typedef union {
@@ -42,7 +57,7 @@ void shuffle(int i, data_t* data) {
 }
 
 int len_() {
-  return (EEPROM.length() / DATA_SIZE) - DATA_OFFSET - DATA_CUT;
+  return (EEPROM_LEN / DATA_SIZE) - DATA_OFFSET - DATA_CUT;
 }
 
 bool save_(int idx, data_t* data) {
@@ -60,7 +75,7 @@ bool save_(int idx, data_t* data) {
     }
   }
 
-  if (all_null) {
+  if (!all_null) {
     // encrypt the data
     for (int k = 0; k < keys_size; k++) {
       const int key = k * INT_DATA_SIZE;
@@ -80,7 +95,7 @@ bool save_(int idx, data_t* data) {
   // save the data
   int offset = idx * DATA_SIZE;
   for (int i = 0; i < DATA_SIZE; i++) {
-    EEPROM.update(i + offset, (int)data->b[i]);
+    EEPROM_WRITE(i + offset, (int)data->b[i]);
   }
 
   return true;
@@ -95,7 +110,7 @@ bool load_(int idx, data_t* data) {
   // load the data
   int offset = idx * DATA_SIZE;
   for (int i = 0; i < DATA_SIZE; i++) {
-    data->b[i] = EEPROM.read(i + offset);
+    data->b[i] = EEPROM_READ(i + offset);
   }
 
   // check if null data
@@ -163,7 +178,7 @@ bool data_to_str(data_t* data, String* str) {
 bool clear_() {
   // clear the data
   for (int i = 0; i < EEPROM.length(); i++) {
-    EEPROM.update(i, 0);
+    EEPROM_WRITE(i, 0);
   }
 
   return true;

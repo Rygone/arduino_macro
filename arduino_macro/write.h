@@ -1,8 +1,15 @@
+#define BLE_NAME            "Arduino Macro"
+#define BLE_CPY             "RYGONE"
+
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
 #include <Keyboard.h>
+#define USB
 #else
 #include <BleKeyboard.h>
+#define BLE
+BleKeyboard Keyboard(BLE_NAME, BLE_CPY);
+
 #endif
 
 // define the types of keys
@@ -40,9 +47,9 @@ typedef struct {
   unsigned int code;
   unsigned int type;
   int status;
-} key_t;
+} custom_key_t;
 
-const key_t custom_key[] = {
+const custom_key_t custom_key[] = {
   {"win_on",    char(0x01), KEY_LEFT_GUI,    on,  0},
   {"win_off",   char(0x02), KEY_LEFT_GUI,    off, 0},
   {"ctrl_on",   char(0x03), KEY_LEFT_CTRL,   on,  1},
@@ -66,11 +73,20 @@ const key_t custom_key[] = {
 };
 const int custom_size = sizeof(custom_key) / sizeof(custom_key[0]);
 
+// setup the keyboard
+void write_setup() {
+#if defined(BLE)
+  Keyboard.begin();
+#endif
+}
+
 // write the data
 void write(String data) {
+#if defined(USB)
   // start keyboard
   Keyboard.begin();
   delay(10);
+#endif
 
   // write the data
   int len = data.length();
@@ -118,6 +134,8 @@ void write(String data) {
   }
   delay(10);
 
+#if defined(USB)
   // stop keyboard
   Keyboard.end();
+#endif
 }

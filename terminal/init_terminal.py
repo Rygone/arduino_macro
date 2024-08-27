@@ -65,9 +65,9 @@ def write(data):
         if c in mp:
             data[i] = mp[c][0]
     data = ''.join(data)
-    # print('->', data)
+    print('->', data)
     data = f'{data}\n'.encode('utf-8')
-    # print('', data)
+    print('', data)
     serial_.write(data)
 path_map    = os.path.join(os.path.dirname(__file__), 'map.txt')
 path_custom = os.path.join(os.path.dirname(__file__), 'custom.txt')
@@ -119,36 +119,78 @@ exclude = [
 replace = lambda i: 128 <= i <= 159 or i in exclude
 #endregion
 
+#region echo default char
+for group in [
+    " `1234567890-=qwertyuiopasdfghjklzxcvbnm[];\'\\,./",
+    "~!@#$%^&*()_+QWERTYUIOOOOPASDFGHJKLZXCVBNM{}:\"|<>?",
+]:
+    string = 'echo ' + group + '¶'
+    write(string)
+    string_keyboard = input()
+    string_serial = read()
+    print(len(string_keyboard), len(string_serial))
+    for k, v in zip(string_keyboard, string_serial):
+        map_[k] = v
+
+with open('map.txt', 'w', encoding='utf-8') as f:
+    for k, v in map_.items():
+        f.write(f'{k}:{v}\n')
+#endregion
+
+#region echo alt
+all_key = "`1234567890-=qwertyuiopasdfghjklzxcvbnm[];\'\\,./"
+for key in all_key:
+    write(f'echo ♣♥{key}{key}♠♦¶')
+    string_keyboard = input()
+    string_serial = read()
+    if len(string_keyboard) > 0:
+        string_keyboard = string_keyboard[0]
+        if string_keyboard not in map_:
+            map_[string_keyboard] = f'♣♥{key}♠♦'
+
+with open('map.txt', 'w', encoding='utf-8') as f:
+    for k, v in map_.items():
+        f.write(f'{k}:{v}\n')
+#endregion
+
+#region get custom key codes
+write('keycodes')
+for kv in read().split(','):
+    key, value = kv.split(':')
+    value = chr(int(value, 16))
+    map_[value] = value
+    custom[key] = value
+#endregion
+
 #region unused_char
 nb_per_line = 16
 
-# print(len(map_), len(set(map_.values())))
-# print()
-# print('key')
-# for i in range(256):
-#     c = chr(i)
-#     v = c in map_.values()
-#     k = c in map_
+print(len(map_), len(set(map_.values())))
+print()
+print('key')
+for i in range(256):
+    c = chr(i)
+    v = c in map_.values()
+    k = c in map_
 
-#     d = (('=' if map_[c] == c else '±') if v else '+') if k else ('-' if v else ' ')
-#     if replace(i):
-#         c = ' '
-#     print(f'{i:2x}: {c:<2} {d}', end='  ' if i%nb_per_line != nb_per_line-1 else '\n')
-# if i%nb_per_line != nb_per_line-1:
-#     print()
-# print()
+    d = (('=' if map_[c] == c else '±') if v else '+') if k else ('-' if v else ' ')
+    if replace(i):
+        c = ' '
+    print(f'{i:2x}: {c:<2} {d}', end='  ' if i%nb_per_line != nb_per_line-1 else '\n')
+if i%nb_per_line != nb_per_line-1:
+    print()
+print()
 
-# print('map')
-# for i, (k, v) in enumerate(sorted(map_.items())):
-#     v = str(v) + ','
-#     k = '' if k == chr(7) else k
-#     print(f'{k:<1}: {v:<7}', end='' if i%nb_per_line != nb_per_line-1 else '\n')
-# if i%nb_per_line != nb_per_line-1:
-#     print()
-# print()
+print('map')
+for i, (k, v) in enumerate(sorted(map_.items())):
+    v = str(v) + ','
+    k = '' if k == chr(7) else k
+    print(f'{k:<1}: {v:<7}', end='' if i%nb_per_line != nb_per_line-1 else '\n')
+if i%nb_per_line != nb_per_line-1:
+    print()
+print()
 
 nb_per_line //= 2
-print()
 print('custom')
 for i, (k, v) in enumerate(sorted(custom.items())):
     print(f'{k:<11} : {v}', end=',    ' if i%nb_per_line != nb_per_line-1 else ',\n')
@@ -157,30 +199,14 @@ if i%nb_per_line != nb_per_line-1:
 print()
 #endregion
 
-#region loop
-try:
-    while True:
-        command = input('> ').strip()
-        if command.startswith('save '):
-            command = command.split()
-            if len(command) > 2:
-                command = command[0] + ' ' + command[1] + ' ' + convert(' '.join(command[2:]))
-            else:
-                command = ' '.join(command)
-        elif command.startswith('echo ') or command.startswith('write ') or command.startswith('send '):
-            command = command.split()
-            if len(command) > 1:
-                command = command[0] + ' ' + convert(' '.join(command[1:]))
-            else:
-                command = ' '.join(command)
-        write(command)
-        data = read()
-        while len(data) > 0:
-            print(data)
-            data = read()
+#region sort map
+with open('map.txt', 'w', encoding='utf-8') as f:
+    for k, v in sorted(map_.items()):
+        f.write(f'{k}:{v}\n')
 
-except KeyboardInterrupt:
-    pass
+with open('custom.txt', 'w', encoding='utf-8') as f:
+    for k, v in sorted(custom.items()):
+        f.write(f'{k}:{v}\n')
 #endregion
 
 #region close

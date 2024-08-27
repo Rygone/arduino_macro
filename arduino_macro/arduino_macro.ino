@@ -15,13 +15,16 @@
 
 #define BAUD_RATE           9600
 #define TIMEOUT             100
+#define BRT_MAX_DELAY       5000
 
 // define the buttons
 bool lock = true;
-unsigned long key = 0;
+unsigned long btn_key = 0;
+unsigned long btn_time = 0;
 
 typedef struct {
   String name;
+  String alias;
   void (*function)(String);
   bool lock;
   String usage;
@@ -35,7 +38,8 @@ void setup() {
 
   // set the lock
   lock = true;
-  key = 0;
+  btn_key = 0;
+  btn_time = millis();
 
   // load the status
   for (int i = 0; i < custom_size; i++) {
@@ -54,6 +58,9 @@ void setup() {
   // start the serial
   Serial.begin(BAUD_RATE);
   Serial.setTimeout(TIMEOUT);
+
+  // setup the keyboard
+  write_setup();
 }
 
 void len(String data) {
@@ -358,7 +365,7 @@ void unlock_(String data) {
 
 void lock_(String data) {
   lock = true;
-  key = 0;
+  btn_key = 0;
   send("Device locked");
 }
 
@@ -373,29 +380,34 @@ void info(String data) {
 }
 
 const command_t commands[] = {
-  {"echo",    echo,    false, "echo <data>",         },//"write the data and send it back"},
-  {"write",   write_,  false, "write <data>",        },//"write the data"                 },
-  {"send",    send,    false, "send <data>",         },//"send the data"                  },
-  {"keycode", keycode, false, "keycode [<name>]",    },//"get the keycode of the key"     },
-  {"locked",  locked,  false, "locked",              },//"check if the device is locked"  },
-  {"len",     len,     false, "len",                 },//"get the number of data space"   },
-  {"save",    save,    true,  "save <index> <data>", },//"save the data at index"         },
-  {"load",    load,    true,  "load <index>",        },//"load the data at index"         },
-  {"clear",   clear,   true,  "clear [<index>]",     },//"clear the data (default all)"   },
-  {"unlock",  unlock_, false, "unlock <key>",        },//"unlock the device (default 0)"  },
-  {"lock",    lock_,   false, "lock",                },//"lock the device"                },
-  {"key",     key_,    true,  "key [<key>]",         },//"get/set the key to unlock"      },
-  {"info",    info,    false, "info",                },//"get the information"            },
+  {"echo",    "",    echo,    false, "echo <data>",         },//"write the data and send it back"},
+  {"write",   "",    write_,  false, "write <data>",        },//"write the data"                 },
+  {"send",    "",    send,    false, "send <data>",         },//"send the data"                  },
+  {"keycode", "",    keycode, false, "keycode [<name>]",    },//"get the keycode of the key"     },
+  {"locked",  "",    locked,  false, "locked",              },//"check if the device is locked"  },
+  {"len",     "",    len,     false, "len",                 },//"get the number of data space"   },
+  {"save",    "set", save,    true,  "save <index> <data>", },//"save the data at index"         },
+  {"load",    "get", load,    true,  "load <index>",        },//"load the data at index"         },
+  {"clear",   "",    clear,   true,  "clear [<index>]",     },//"clear the data (default all)"   },
+  {"unlock",  "",    unlock_, false, "unlock <key>",        },//"unlock the device (default 0)"  },
+  {"lock",    "",    lock_,   false, "lock",                },//"lock the device"                },
+  {"key",     "",    key_,    true,  "key [<key>]",         },//"get/set the key to unlock"      },
+  {"info",    "",    info,    false, "info",                },//"get the information"            },
 };
 const int commands_size = sizeof(commands) / sizeof(commands[0]);
 
 void press_lock(int idx) {
+  unsigned long dt = millis() - btn_time;
+  btn_time = millis();
+  if (dt > BRT_MAX_DELAY) {
+    btn_key = 0;
+  }
   if (idx == 0) {
-    key = 0;
+    btn_key = 0;
   } else if (idx == buttons_size - 1) {
-    unlock(key);
+    unlock(btn_key);
   } else {
-    key = key << 4 | (idx);
+    btn_key = btn_key << 4 | (idx);
   }
 }
 
@@ -430,13 +442,13 @@ void command(String data) {
   // iterate over the commands
   for (int i = 0; i < commands_size; i++) {
     // check if the command is the same
-    if (data.startsWith(commands[i].name)) {
+    if (data.startsWith(commands[i].name) || (commands[i].alias.length() > 0 && data.startsWith(commands[i].alias))) {
       // check if the command needs the device to be unlocked
       if (commands[i].lock && lock) {
         send("Device is locked");
       } else {
         // remove the command name
-        int len = commands[i].name.length();
+        int len = data.startsWith(commands[i].name) ? commands[i].name.length() : commands[i].alias.length();
         if (data.length() > len) {
           data = data.substring(len + 1);
         } else {
@@ -455,11 +467,12 @@ void command(String data) {
     send("Commands:");
     for (int i = 0; i < commands_size; i++) {
       String usage = "  " + commands[i].usage;
-      String lock_ = (commands[i].lock && lock ? "  (locked)" : "");
-      while (usage.length() < 21 and lock_.length() > 0) {
+      String alias = commands[i].alias.length() > 0 ? " (alias:" + commands[i].alias + ")" : "";
+      String lock_ = (commands[i].lock && lock ? " (locked)" : "");
+      while (usage.length() < 21 && (lock_.length() > 0 || alias.length() > 0)) {
         usage += " ";
       }
-      send(usage + lock_);
+      send(usage + alias + lock_);
     }
     return;
   }
