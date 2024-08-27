@@ -4,11 +4,12 @@
 
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
-#define Type                "Leonardo"
+#define LEONARDO
 #define BUTTONS             0x1DC7FF
 #define RGB(r, g, b)        {}
+#define USB
 #else
-#define Type                "ESP32"
+#define ESP32
 #define BUTTONS             0x1FE3FFF
 #define RGB(r, g, b)        {analogWrite(14, 255-r); analogWrite(15, 255-g); analogWrite(16, 255-b);}
 #endif
@@ -16,6 +17,9 @@
 #define BAUD_RATE           9600
 #define TIMEOUT             100
 #define BRT_MAX_DELAY       5000
+
+#define DATA_OFFSET         2
+#define DATA_CUT            0
 
 // define the buttons
 bool lock = true;
@@ -28,7 +32,6 @@ typedef struct {
   void (*function)(String);
   bool lock;
   String usage;
-  // String help;
 } command_t;
 
 void setup() {
@@ -61,6 +64,12 @@ void setup() {
 
   // setup the keyboard
   write_setup();
+
+  // setup the store
+  store_setup();
+
+  // set the color
+  RGB(255, 0, 0);
 }
 
 void len(String data) {
@@ -380,19 +389,19 @@ void info(String data) {
 }
 
 const command_t commands[] = {
-  {"echo",    "",    echo,    false, "echo <data>",         },//"write the data and send it back"},
-  {"write",   "",    write_,  false, "write <data>",        },//"write the data"                 },
-  {"send",    "",    send,    false, "send <data>",         },//"send the data"                  },
-  {"keycode", "",    keycode, false, "keycode [<name>]",    },//"get the keycode of the key"     },
-  {"locked",  "",    locked,  false, "locked",              },//"check if the device is locked"  },
-  {"len",     "",    len,     false, "len",                 },//"get the number of data space"   },
-  {"save",    "set", save,    true,  "save <index> <data>", },//"save the data at index"         },
-  {"load",    "get", load,    true,  "load <index>",        },//"load the data at index"         },
-  {"clear",   "",    clear,   true,  "clear [<index>]",     },//"clear the data (default all)"   },
-  {"unlock",  "",    unlock_, false, "unlock <key>",        },//"unlock the device (default 0)"  },
-  {"lock",    "",    lock_,   false, "lock",                },//"lock the device"                },
-  {"key",     "",    key_,    true,  "key [<key>]",         },//"get/set the key to unlock"      },
-  {"info",    "",    info,    false, "info",                },//"get the information"            },
+  {"echo",    "",    echo,    false, "echo <data>",         }, // write the data and send it back
+  {"write",   "",    write_,  false, "write <data>",        }, // write the data
+  {"send",    "",    send,    false, "send <data>",         }, // send the data
+  {"keycode", "",    keycode, false, "keycode [<name>]",    }, // get the keycode of the key
+  {"locked",  "",    locked,  false, "locked",              }, // check if the device is locked
+  {"len",     "",    len,     false, "len",                 }, // get the number of data space
+  {"save",    "set", save,    true,  "save <index> <data>", }, // save the data at index
+  {"load",    "get", load,    true,  "load <index>",        }, // load the data at index
+  {"clear",   "",    clear,   true,  "clear [<index>]",     }, // clear the data (default all)
+  {"unlock",  "",    unlock_, false, "unlock <key>",        }, // unlock the device (default 0)
+  {"lock",    "",    lock_,   false, "lock",                }, // lock the device
+  {"key",     "",    key_,    true,  "key [<key>]",         }, // get/set the key to unlock
+  {"info",    "",    info,    false, "info",                }, // get the information
 };
 const int commands_size = sizeof(commands) / sizeof(commands[0]);
 
@@ -482,10 +491,18 @@ void command(String data) {
 }
 
 void loop() {
+
+  // check a button is pressed
   for (int i = 0; i < buttons_size; i++) {
     if (digitalRead(buttons[i]) == LOW) {
       if (!pressed(i)) {
+        // press the button
         swap_pressed(i);
+
+        // set the color
+        RGB(lock ? 255 : 0, lock ? 0 : 255, lock ? 0 : 255);
+
+        // press the button
         if (lock) {
           press_lock(i);
         } else {
@@ -493,14 +510,29 @@ void loop() {
         }
       }
     } else {
+
+      // set the color
+      RGB(lock ? 255 : 0, 0, lock ? 0 : 255);
+
+      // release the button
       reset_pressed(i);
     }
   }
+
+  // check if there is data in the serial
   if (Serial.available() > 0) {
     String data = Serial.readString();
     if (data.length() > 0) {
+
+      // set the color
+      RGB(lock ? 255 : 0, lock ? 0 : 255, 255);
+
+      // compute the data
       data.trim();
       command(data);
+
+      // set the color
+      RGB(lock ? 255 : 0, 0, lock ? 0 : 255);
     }
   } else {
     delay(100);

@@ -1,26 +1,38 @@
 #include <EEPROM.h>
 
-// define the storage data
-#define DATA_OFFSET         2
-#define DATA_CUT            0
-#define DATA_SIZE           32
-#define INT_DATA_SIZE       (DATA_SIZE/sizeof(int))
-#define LONG_DATA_SIZE      (DATA_SIZE/sizeof(long))
 
 // define the
 #if defined(ARDUINO_AVR_LEONARDO)
+
+#define DATA_SIZE           32
 
 #define EEPROM_LEN          EEPROM.length()
 #define EEPROM_READ(i)      EEPROM.read(i)
 #define EEPROM_WRITE(i, v)  EEPROM.update(i, v)
 
+// setup the keyboard
+void store_setup() {}
+
 #else
+
+#define DATA_SIZE           128
 
 #define EEPROM_LEN          EEPROM.length()
 #define EEPROM_READ(i)      EEPROM.read(i)
-#define EEPROM_WRITE(i, v)  {if (EEPROM.read(i) != v) EEPROM.write(i, v);}
+#define EEPROM_WRITE(i, v)  {EEPROM.write(i, v); EEPROM.commit();}
+
+// setup the keyboard
+void store_setup() {
+  // start the EEPROM
+  EEPROM.begin(4096);
+}
 
 #endif
+
+
+// define the storage data
+#define INT_DATA_SIZE       (DATA_SIZE/sizeof(int))
+#define LONG_DATA_SIZE      (DATA_SIZE/sizeof(long))
 
 const int keys_size = sizeof(cipher_keys) / DATA_SIZE;
 
@@ -57,7 +69,7 @@ void shuffle(int i, data_t* data) {
 }
 
 int len_() {
-  return (EEPROM_LEN / DATA_SIZE) - DATA_OFFSET - DATA_CUT;
+  return EEPROM_LEN / DATA_SIZE;
 }
 
 bool save_(int idx, data_t* data) {

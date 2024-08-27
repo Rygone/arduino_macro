@@ -33,7 +33,6 @@ void setup() {
     }
   }
 
-
   // set the RGB pins
   RGB(255, 0, 0);
 }

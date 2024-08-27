@@ -3,12 +3,52 @@
 
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
+
 #include <Keyboard.h>
 #define USB
+
 #else
-#include <BleKeyboard.h>
-#define BLE
-BleKeyboard Keyboard(BLE_NAME, BLE_CPY);
+
+class Keyboard_cls
+{
+private:
+  /* data */
+public:
+  Keyboard_cls(/* args */) {}
+  ~Keyboard_cls() {}
+  void begin() {}
+  void end() {}
+  void press(char key) {}
+  void release(char key) {}
+  void write(char key) {}
+};
+
+Keyboard_cls Keyboard;
+#define KEY_LEFT_GUI        0
+#define KEY_LEFT_GUI        0
+#define KEY_LEFT_CTRL       0
+#define KEY_LEFT_CTRL       0
+#define KEY_LEFT_ALT        0
+#define KEY_LEFT_ALT        0
+#define KEY_LEFT_SHIFT      0
+#define KEY_LEFT_SHIFT      0
+#define KEY_ESC             0
+#define KEY_TAB             0
+#define KEY_CAPS_LOCK       0
+#define KEY_RETURN          0
+#define KEY_DELETE          0
+#define KEY_BACKSPACE       0
+#define KEY_UP_ARROW        0
+#define KEY_DOWN_ARROW      0
+#define KEY_LEFT_ARROW      0
+#define KEY_RIGHT_ARROW     0
+
+// #include <Keyboard.h>
+#define USB
+
+// #include <BleKeyboard.h>
+// #define BLE
+// BleKeyboard Keyboard(BLE_NAME, BLE_CPY);
 
 #endif
 

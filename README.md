@@ -20,6 +20,7 @@ Depending on the board you use, you can use the Arduino Leonardo as a USB keyboa
     ```bash
     python map_buttons.py
     ```
+    (note: first `button` will be the `reset key` and the last `button` will be the `enter key`)
 8. Flash the `arduino_macro.ino` file to your Arduino.
 9. Open the `terminal` folder and run the `init_terminal.py` file to initialize the terminal.
     ```bash
@@ -31,3 +32,31 @@ Depending on the board you use, you can use the Arduino Leonardo as a USB keyboa
     ```
 11. Once the terminal is open, you can send the commands `help` to see the available commands.
 12. Once the Arduino setup as you want, you no longer need to run the `terminal.py` file, you can use the Arduino as a macro keyboard.
+
+
+## arduino_macro scetch
+The `arduino_macro` scetch is the main scetch to use the Arduino as a macro keyboard.
+It can be programmed with the `terminal.py` or any other serial communication tool.
+
+By default, the `buttons` are mapped to the corresponding `memories` (e.g. `button 0` is mapped to `memory 0`).
+This mapping can be changed in the `setup.h` file by changing the `map_buttons` array.
+
+To unlock the device you can set press the `reset key` and then press the `password` (default `0`) and then press the `enter key` to validate the password.
+You can change the `password` with the `key` command.
+(note: the `password` is a succession of number between `1` and `nb_buttons-1` as the `reset key` and the `enter key` are reserved)
+
+### Commands of the arduino_macro scetch
+- `help`: Show the available commands.
+- `echo <data>`: Write the data and send it back.
+- `write <data>`: Write the data.
+- `send <data>`: Send the data.
+- `keycode [<name>]`: Get the keycode of the key.
+- `locked`: Check if the device is locked.
+- `len`: Get the number of data space.
+- `save <index> <data>`: Save the data at index.
+- `load <index>`: Load the data at index.
+- `clear [<index>]`: Clear the data (default all).
+- `unlock <key>`: Unlock the device (default 0).
+- `lock`: Lock the device.
+- `key [<key>]`: Get/set the key to unlock.
+- `info`: Get the information.

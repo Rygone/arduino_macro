@@ -55,7 +55,7 @@ if os.path.exists(path):
         lines = lines[:idx_start] + lines[idx_end+1:]
     if len(lines) > 0 and lines[-1] != '':
         lines.append('')
-    while lines[0] == '':
+    while len(lines) > 0 and lines[0] == '':
         lines.pop(0)
 #endregion
 
@@ -64,12 +64,12 @@ print('Adding buttons')
 lines += [
     '#pragma region Buttons',
     'const int buttons[] = {',
-    ', '.join(buttons),
+    '  '+', '.join(buttons),
     '};',
     'const int buttons_size = sizeof(buttons) / sizeof(buttons[0]);',
     '',
     'int map_buttons[] {',
-    ', '.join((str(i) for i in range(len(buttons)))),
+    '  '+', '.join((str(i) for i in range(len(buttons)))),
     '};',
     '#pragma endregion Buttons',
 ]
