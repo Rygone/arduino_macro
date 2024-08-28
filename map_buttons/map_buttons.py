@@ -43,11 +43,39 @@ try:
         button = ''
         while button == '':
             button = serial_.readline().decode('utf-8').strip()
+            if button in buttons:
+                print(f'button {button} already pressed, press ctrl+c to exit')
+                button = ''
         print(f'button: {button}')
         buttons.append(button)
 except KeyboardInterrupt:
-    print('Exiting...')
-    serial_.close()
+    pass
+print()
+
+print(f'press reset button')
+reset = ''
+while reset == '':
+    reset = serial_.readline().decode('utf-8').strip()
+    if reset in buttons:
+        reset = [i for i, b in enumerate(buttons) if b == reset][0]
+    else:
+        reset = ''
+print(f'reset button: {reset}')
+
+print(f'press enter button')
+enter = ''
+while enter == '':
+    enter = serial_.readline().decode('utf-8').strip()
+    if enter in buttons:
+        enter = [i for i, b in enumerate(buttons) if b == enter][0]
+    else:
+        enter = ''
+print(f'enter button: {enter}')
+
+print('Exiting...')
+serial_.close()
+
+
 #endregion
 
 #region load setup.h
@@ -77,6 +105,9 @@ lines += [
     '  '+', '.join(buttons),
     '};',
     'const int buttons_size = sizeof(buttons) / sizeof(buttons[0]);',
+    '',
+    f'const int reset_button = {reset};',
+    f'const int enter_button = {enter};',
     '',
     'int map_buttons[] {',
     '  '+', '.join((str(i) for i in range(len(buttons)))),

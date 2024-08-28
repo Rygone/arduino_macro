@@ -2,7 +2,7 @@
 #include "write.h"
 #include "store.h"
 
-#define VERSION             "0.2"
+#define VERSION             "0.3"
 
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
@@ -402,11 +402,14 @@ void press_lock(int idx) {
   if (dt > BRT_MAX_DELAY) {
     btn_key = 0;
   }
-  if (idx == 0) {
+  if (idx == reset_button) {
     btn_key = 0;
-  } else if (idx == buttons_size - 1) {
+  } else if (idx == enter_button) {
     unlock(btn_key);
   } else {
+    idx += (reset_button < idx) ?
+      ((enter_button < idx) ? -1 : 0):
+      ((enter_button < idx) ?  0 : 1);
     btn_key = btn_key << 4 | (idx);
   }
 }
