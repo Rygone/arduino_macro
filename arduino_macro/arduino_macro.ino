@@ -239,11 +239,8 @@ void clear(String data) {
 void keycode(String data) {
   if (data.length() <= 1) {
     for (int i = 0; i < custom_size; i++) {
-      data += custom_key[i].name + ":0x" + hex(custom_key[i].char_);
-      if (i < custom_size - 1)
-        data += ",";
+      send(custom_key[i].name + ":0x" + hex(custom_key[i].char_));
     }
-    send(data);
     return;
   } else {
     for (int i = 0; i < custom_size; i++) {
@@ -452,12 +449,18 @@ void command(String data) {
   for (int i = 0; i < commands_size; i++) {
     // check if the command is the same
     if (data.startsWith(commands[i].name) || (commands[i].alias.length() > 0 && data.startsWith(commands[i].alias))) {
+      int len = data.startsWith(commands[i].name) ? commands[i].name.length() : commands[i].alias.length();
+
+      // check if the command starts the same but the next character is not a space
+      if (data.length() > len && data[len] != ' ') {
+        continue;
+      }
+
       // check if the command needs the device to be unlocked
       if (commands[i].lock && lock) {
         send("Device is locked");
       } else {
         // remove the command name
-        int len = data.startsWith(commands[i].name) ? commands[i].name.length() : commands[i].alias.length();
         if (data.length() > len) {
           data = data.substring(len + 1);
         } else {

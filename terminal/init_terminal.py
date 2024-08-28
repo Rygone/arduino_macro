@@ -65,10 +65,11 @@ def write(data):
         if c in mp:
             data[i] = mp[c][0]
     data = ''.join(data)
-    print('->', data)
+    # print('->', data)
     data = f'{data}\n'.encode('utf-8')
-    print('', data)
+    # print('', data)
     serial_.write(data)
+
 path_map    = os.path.join(os.path.dirname(__file__), 'map.txt')
 path_custom = os.path.join(os.path.dirname(__file__), 'custom.txt')
 if os.path.isfile(path_map):
@@ -119,10 +120,19 @@ exclude = [
 replace = lambda i: 128 <= i <= 159 or i in exclude
 #endregion
 
+#region len
+write('len')
+print(read())
+
 #region echo default char
 for group in [
-    " `1234567890-=qwertyuiopasdfghjklzxcvbnm[];\'\\,./",
-    "~!@#$%^&*()_+QWERTYUIOOOOPASDFGHJKLZXCVBNM{}:\"|<>?",
+    "qwertyuiopasdfghjklzxcvbnm",
+    "QWERTYUIOPASDFGHJKLZXCVBNM"
+    " ",
+    "`1234567890-=",
+    "~!@#$%^&*()_+",
+    "[];\'\\,./",
+    "{}:\"|<>?",
 ]:
     string = 'echo ' + group + '¶'
     write(string)
@@ -131,10 +141,6 @@ for group in [
     print(len(string_keyboard), len(string_serial))
     for k, v in zip(string_keyboard, string_serial):
         map_[k] = v
-
-with open('map.txt', 'w', encoding='utf-8') as f:
-    for k, v in map_.items():
-        f.write(f'{k}:{v}\n')
 #endregion
 
 #region echo alt
@@ -147,19 +153,18 @@ for key in all_key:
         string_keyboard = string_keyboard[0]
         if string_keyboard not in map_:
             map_[string_keyboard] = f'♣♥{key}♠♦'
-
-with open('map.txt', 'w', encoding='utf-8') as f:
-    for k, v in map_.items():
-        f.write(f'{k}:{v}\n')
 #endregion
 
 #region get custom key codes
-write('keycodes')
-for kv in read().split(','):
+write('keycode')
+kv = read()
+while len(kv) > 0:
     key, value = kv.split(':')
     value = chr(int(value, 16))
     map_[value] = value
     custom[key] = value
+
+    kv = read()
 #endregion
 
 #region unused_char
@@ -200,11 +205,11 @@ print()
 #endregion
 
 #region sort map
-with open('map.txt', 'w', encoding='utf-8') as f:
+with open(path_map, 'w', encoding='utf-8') as f:
     for k, v in sorted(map_.items()):
         f.write(f'{k}:{v}\n')
 
-with open('custom.txt', 'w', encoding='utf-8') as f:
+with open(path_custom, 'w', encoding='utf-8') as f:
     for k, v in sorted(custom.items()):
         f.write(f'{k}:{v}\n')
 #endregion
