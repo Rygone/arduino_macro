@@ -2,6 +2,8 @@
 #include "write.h"
 #include "store.h"
 
+#define VERSION             "0.1"
+
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
 #define LEONARDO
@@ -376,6 +378,7 @@ void lock_(String data) {
 }
 
 void info(String data) {
+  send("Version: " VERSION);
   send("Baud rate: " + String(BAUD_RATE));
   send("Timeout: " + String(TIMEOUT));
   if(lock) {
