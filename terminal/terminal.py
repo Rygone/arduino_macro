@@ -2,11 +2,21 @@ import os
 import serial
 
 #region variables
-com = os.path.join(os.path.dirname(__file__), '..', 'com.txt')
-if not os.path.exists(com):
-    com = os.path.normpath(com)
-    raise FileNotFoundError(f'File not found: {com} you have to save the com port in this file')
-com = open(com, 'r').read().strip()
+com_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'com.txt'))
+com = None
+if os.path.exists(com_path):
+    com = open(com_path, 'r').read().strip()
+if com is None:
+    print(f'\nFile not found or not correct: {com_path}')
+    print(f'You can save the com port in this file to avoid this message')
+    while com is None:
+        com = input('\nEnter the com port (e.g. COM3): ').strip()
+        if com.startswith('COM') and com[3:].isnumeric():
+            com = f'COM{com[3:]}'
+        elif com.isnumeric():
+            com = f'COM{com}'
+        else:
+            com = None
 baud = 9600
 #endregion
 
@@ -73,6 +83,7 @@ def write(data):
     data = f'{data}\n'.encode('utf-8')
     # print('', data)
     serial_.write(data)
+
 path_map    = os.path.join(os.path.dirname(__file__), 'map.txt')
 path_custom = os.path.join(os.path.dirname(__file__), 'custom.txt')
 if os.path.isfile(path_map):
@@ -124,36 +135,10 @@ replace = lambda i: 128 <= i <= 159 or i in exclude
 #endregion
 
 #region unused_char
-nb_per_line = 16
-
-# print(len(map_), len(set(map_.values())))
-# print()
-# print('key')
-# for i in range(256):
-#     c = chr(i)
-#     v = c in map_.values()
-#     k = c in map_
-
-#     d = (('=' if map_[c] == c else '±') if v else '+') if k else ('-' if v else ' ')
-#     if replace(i):
-#         c = ' '
-#     print(f'{i:2x}: {c:<2} {d}', end='  ' if i%nb_per_line != nb_per_line-1 else '\n')
-# if i%nb_per_line != nb_per_line-1:
-#     print()
-# print()
-
-# print('map')
-# for i, (k, v) in enumerate(sorted(map_.items())):
-#     v = str(v) + ','
-#     k = '' if k == chr(7) else k
-#     print(f'{k:<1}: {v:<7}', end='' if i%nb_per_line != nb_per_line-1 else '\n')
-# if i%nb_per_line != nb_per_line-1:
-#     print()
-# print()
-
-nb_per_line //= 2
+nb_per_line = 4
 print()
 print('custom')
+i = 0
 for i, (k, v) in enumerate(sorted(custom.items())):
     print(f'{k:<11} : {v}', end=',    ' if i%nb_per_line != nb_per_line-1 else ',\n')
 if i%nb_per_line != nb_per_line-1:

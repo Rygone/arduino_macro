@@ -2,11 +2,21 @@ import os
 import serial
 
 #region variables
-com = os.path.join(os.path.dirname(__file__), '..', 'com.txt')
-if not os.path.exists(com):
-    com = os.path.normpath(com)
-    raise FileNotFoundError(f'File not found: {com} you have to save the com port in this file')
-com = open(com, 'r').read().strip()
+com_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'com.txt'))
+com = None
+if os.path.exists(com_path):
+    com = open(com_path, 'r').read().strip()
+if com is None:
+    print(f'\nFile not found or not correct: {com_path}')
+    print(f'You can save the com port in this file to avoid this message')
+    while com is None:
+        com = input('\nEnter the com port (e.g. COM3): ').strip()
+        if com.startswith('COM') and com[3:].isnumeric():
+            com = f'COM{com[3:]}'
+        elif com.isnumeric():
+            com = f'COM{com}'
+        else:
+            com = None
 baud = 9600
 #endregion
 
@@ -54,7 +64,11 @@ mp = {
 def read():
     r = serial_.readline()
     # print('', r)
-    r = r.decode('utf-8').rstrip()
+    try:
+        r = r.decode('utf-8').rstrip()
+    except UnicodeDecodeError:
+        r = str(r)[2:-1]
+        r = r.rstrip()
     # print('<-', r)
     return r
 
