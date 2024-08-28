@@ -205,10 +205,12 @@ print()
 #endregion
 
 #region sort map
+print(f'save map in {path_map}')
 with open(path_map, 'w', encoding='utf-8') as f:
     for k, v in sorted(map_.items()):
         f.write(f'{k}:{v}\n')
 
+print(f'save custom in {path_custom}')
 with open(path_custom, 'w', encoding='utf-8') as f:
     for k, v in sorted(custom.items()):
         f.write(f'{k}:{v}\n')

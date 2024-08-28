@@ -15,7 +15,7 @@ void store_setup() {}
 
 #else
 
-#define DATA_SIZE           128
+#define DATA_SIZE           64
 
 #define EEPROM_LEN          EEPROM.length()
 #define EEPROM_READ(i)      EEPROM.read(i)
@@ -28,7 +28,6 @@ void store_setup() {
 }
 
 #endif
-
 
 // define the storage data
 #define INT_DATA_SIZE       (DATA_SIZE/sizeof(int))

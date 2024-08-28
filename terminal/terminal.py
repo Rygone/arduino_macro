@@ -54,7 +54,11 @@ mp = {
 def read():
     r = serial_.readline()
     # print('', r)
-    r = r.decode('utf-8').rstrip()
+    try:
+        r = r.decode('utf-8').rstrip()
+    except UnicodeDecodeError:
+        r = str(r)[2:-1]
+        r = r.rstrip()
     # print('<-', r)
     return r
 

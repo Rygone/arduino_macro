@@ -2,7 +2,7 @@
 #include "write.h"
 #include "store.h"
 
-#define VERSION             "0.1"
+#define VERSION             "0.2"
 
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
@@ -30,7 +30,6 @@ unsigned long btn_time = 0;
 
 typedef struct {
   String name;
-  String alias;
   void (*function)(String);
   bool lock;
   String usage;
@@ -131,7 +130,15 @@ void send(String data) {
   Serial.println(data);
 }
 
-bool check_idx(int* idx) {
+void send_locked() {
+  if (lock) {
+    send("Device is locked");
+  } else {
+    send("Device is unlocked");
+  }
+}
+
+bool check_idx_(int* idx) {
   if (*idx < 0) {
     return false;
   }
@@ -141,14 +148,12 @@ bool check_idx(int* idx) {
   }
   return true;
 }
+#define check_idx(idx) if (!check_idx_(&idx)) { send("Invalid index"); return; }
 
 void save(String data) {
   // extract the index
   int idx = extract_int(&data);
-  if (!check_idx(&idx)) {
-    send("Invalid index");
-    return;
-  }
+  check_idx(idx);
 
   // copy the data
   data_t d;
@@ -159,7 +164,7 @@ void save(String data) {
 
   // send result
   if (save_(idx, &d)) {
-    send("Saved");
+    send("Saved " + data);
   } else {
     send("Error in saving");
   }
@@ -168,10 +173,7 @@ void save(String data) {
 void load(String data) {
   // extract the index
   int idx = extract_int(&data);
-  if (!check_idx(&idx)) {
-    send("Invalid index");
-    return;
-  }
+  check_idx(idx);
 
   // load the data
   data_t d;
@@ -215,10 +217,7 @@ void clear(String data) {
   } else {
     // extract the index
     int idx = extract_int(&data);
-    if (!check_idx(&idx)) {
-      send("Invalid index");
-      return;
-    }
+    check_idx(idx);
 
     // clear the data
     data_t d;
@@ -276,11 +275,7 @@ void echo(String data) {
 }
 
 void locked(String data) {
-  if (lock) {
-    send("Device is locked");
-  } else {
-    send("Device is unlocked");
-  }
+  send_locked();
 }
 
 unsigned long get_true_key() {
@@ -381,27 +376,23 @@ void info(String data) {
   send("Version: " VERSION);
   send("Baud rate: " + String(BAUD_RATE));
   send("Timeout: " + String(TIMEOUT));
-  if(lock) {
-    send("Device is locked");
-  } else {
-    send("Device is unlocked");
-  }
+  send_locked();
 }
 
 const command_t commands[] = {
-  {"echo",    "",    echo,    false, "echo <data>",         }, // write the data and send it back
-  {"write",   "",    write_,  false, "write <data>",        }, // write the data
-  {"send",    "",    send,    false, "send <data>",         }, // send the data
-  {"keycode", "",    keycode, false, "keycode [<name>]",    }, // get the keycode of the key
-  {"locked",  "",    locked,  false, "locked",              }, // check if the device is locked
-  {"len",     "",    len,     false, "len",                 }, // get the number of data space
-  {"save",    "set", save,    true,  "save <index> <data>", }, // save the data at index
-  {"load",    "get", load,    true,  "load <index>",        }, // load the data at index
-  {"clear",   "",    clear,   true,  "clear [<index>]",     }, // clear the data (default all)
-  {"unlock",  "",    unlock_, false, "unlock <key>",        }, // unlock the device (default 0)
-  {"lock",    "",    lock_,   false, "lock",                }, // lock the device
-  {"key",     "",    key_,    true,  "key [<key>]",         }, // get/set the key to unlock
-  {"info",    "",    info,    false, "info",                }, // get the information
+  {"echo",    echo,    false, "<data>",         }, // write the data and send it back
+  {"write",   write_,  false, "<data>",         }, // write the data
+  {"send",    send,    false, "<data>",         }, // send the data
+  {"keycode", keycode, false, "[<name>]",       }, // get the keycode of the key
+  {"locked",  locked,  false, "",               }, // check if the device is locked
+  {"len",     len,     false, "",               }, // get the number of data space
+  {"save",    save,    true,  "<index> <data>", }, // save the data at index
+  {"load",    load,    true,  "<index>",        }, // load the data at index
+  {"clear",   clear,   true,  "[<index>]"       }, // clear the data (default all)
+  {"unlock",  unlock_, false, "<key>",          }, // unlock the device (default 0)
+  {"lock",    lock_,   false, "",               }, // lock the device
+  {"key",     key_,    true,  "[<key>]",        }, // get/set the key to unlock
+  {"info",    info,    false, "",               }, // get the information
 };
 const int commands_size = sizeof(commands) / sizeof(commands[0]);
 
@@ -423,12 +414,7 @@ void press_lock(int idx) {
 void press_unlock(int idx) {
   // map the index
   idx = map_buttons[idx];
-
-  // check if the index is valid
-  if (!check_idx(&idx)) {
-    send("Invalid index");
-    return;
-  }
+  check_idx(idx);
 
   // load the data
   data_t d;
@@ -451,8 +437,8 @@ void command(String data) {
   // iterate over the commands
   for (int i = 0; i < commands_size; i++) {
     // check if the command is the same
-    if (data.startsWith(commands[i].name) || (commands[i].alias.length() > 0 && data.startsWith(commands[i].alias))) {
-      int len = data.startsWith(commands[i].name) ? commands[i].name.length() : commands[i].alias.length();
+    if (data.startsWith(commands[i].name)) {
+      int len = commands[i].name.length();
 
       // check if the command starts the same but the next character is not a space
       if (data.length() > len && data[len] != ' ') {
@@ -461,7 +447,7 @@ void command(String data) {
 
       // check if the command needs the device to be unlocked
       if (commands[i].lock && lock) {
-        send("Device is locked");
+        send_locked();
       } else {
         // remove the command name
         if (data.length() > len) {
@@ -481,13 +467,12 @@ void command(String data) {
   if(data.startsWith("help")) {
     send("Commands:");
     for (int i = 0; i < commands_size; i++) {
-      String usage = "  " + commands[i].usage;
-      String alias = commands[i].alias.length() > 0 ? " (alias:" + commands[i].alias + ")" : "";
+      String usage = commands[i].name + "  " + commands[i].usage;
       String lock_ = (commands[i].lock && lock ? " (locked)" : "");
-      while (usage.length() < 21 && (lock_.length() > 0 || alias.length() > 0)) {
+      while (usage.length() < 21 && lock_.length() > 0) {
         usage += " ";
       }
-      send(usage + alias + lock_);
+      send(usage + lock_);
     }
     return;
   }
