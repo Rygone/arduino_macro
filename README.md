@@ -14,24 +14,28 @@ Depending on the board you use, you can use the Arduino Leonardo as a USB keyboa
     pip install numpy
     ```
 4. Connect the Arduino to your computer.
-5. Open the `com.txt` file and write the COM port of your Arduino. (e.g. `COM3`, you can find the COM port in the Arduino IDE under `Tools > Port`)
+5. Create a `com.txt` file and write the COM port of your Arduino. (e.g. `COM3`, you can find the COM port in the Arduino IDE under `Tools > Port`)
 6. Open the `map_buttons` folder and flash the `map_buttons.ino` file to your Arduino.
 7. Run the `map_buttons.py` file to map the buttons of your Arduino and follow the instructions.
     ```bash
     python map_buttons.py
     ```
     (note: first `button` will be the `reset key` and the last `button` will be the `enter key`)
-8. Flash the `arduino_macro.ino` file to your Arduino.
-9. Open the `terminal` folder and run the `init_terminal.py` file to initialize the terminal.
+8. Go back to the root folder and run the `gen_key.py` file to generate a cipher key:
+    ```bash
+    python gen_key.py
+    ```
+9. Flash the `arduino_macro.ino` file to your Arduino.
+10. Open the `terminal` folder and run the `init_terminal.py` file to initialize the terminal (carrefull, run this script in a terminal as it will emulate lots of keyboard combination).
     ```bash
     python init_terminal.py
     ```
-10. Run the `terminal.py` file to use communication with the Arduino. (note: the arduino can change the COM port, so you may need to modify the `com.txt` file)
+11. Run the `terminal.py` file to use communication with the Arduino. (note: the arduino can change the COM port, so you may need to modify the `com.txt` file)
     ```bash
     python terminal.py
     ```
-11. Once the terminal is open, you can send the commands `help` to see the available commands.
-12. Once the Arduino setup as you want, you no longer need to run the `terminal.py` file, you can use the Arduino as a macro keyboard.
+12. Once the terminal is open, you can send the commands `help` to see the available commands.
+13. Once the Arduino setup as you want, you no longer need to run the `terminal.py` file, you can use the Arduino as a macro keyboard.
 
 
 ## arduino_macro scetch
