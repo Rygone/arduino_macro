@@ -43,8 +43,12 @@ The `arduino_macro` scetch is the main scetch to use the Arduino as a macro keyb
 It can be programmed with the `terminal.py` or any other serial communication tool.
 
 To unlock the device you can set press the `reset key` and then press the `password` (default `0`) and then press the `enter key` to validate the password.
+You can also unlock the device with the `unlock` command in the `terminal.py` file.
 You can change the `password` with the `key` command.
 (note: the `password` is a succession of number between `1` and `nb_buttons-1` as the `reset key` and the `enter key` are reserved)
+
+To test the device, you can use the `echo` or `write` command to write a string with the simulated keyboard.
+`write Hello World!` will write `Hello World!` with the simulated keyboard.
 
 By default, the `buttons` are mapped to the corresponding `memories` (e.g. `button 0` is mapped to `memory 0`).
 So to set `button 0` to `Hello World!`, you can use the following command in the `terminal.py`:
@@ -55,7 +59,7 @@ Once the button is set, you can press the `button 0` and it will write `Hello Wo
 This mapping can be changed in the `setup.h` file by changing the `map_buttons` array.
 
 
-### Commands of the arduino_macro scetch
+### Commands of the arduino_macro sketch
 - `help`: Show the available commands.
 - `echo <data>`: Write the data and send it back.
 - `write <data>`: Write the data.
