@@ -42,12 +42,18 @@ Depending on the board you use, you can use the Arduino Leonardo as a USB keyboa
 The `arduino_macro` scetch is the main scetch to use the Arduino as a macro keyboard.
 It can be programmed with the `terminal.py` or any other serial communication tool.
 
-By default, the `buttons` are mapped to the corresponding `memories` (e.g. `button 0` is mapped to `memory 0`).
-This mapping can be changed in the `setup.h` file by changing the `map_buttons` array.
-
 To unlock the device you can set press the `reset key` and then press the `password` (default `0`) and then press the `enter key` to validate the password.
 You can change the `password` with the `key` command.
 (note: the `password` is a succession of number between `1` and `nb_buttons-1` as the `reset key` and the `enter key` are reserved)
+
+By default, the `buttons` are mapped to the corresponding `memories` (e.g. `button 0` is mapped to `memory 0`).
+So to set `button 0` to `Hello World!`, you can use the following command in the `terminal.py`:
+```
+save 0 Hello World!
+```
+Once the button is set, you can press the `button 0` and it will write `Hello World!`.
+This mapping can be changed in the `setup.h` file by changing the `map_buttons` array.
+
 
 ### Commands of the arduino_macro scetch
 - `help`: Show the available commands.

@@ -62,7 +62,7 @@ while reset == '':
     if reset in buttons:
         reset = [i for i, b in enumerate(buttons) if b == reset][0]
     else:
-        print(f'button {len(buttons)}: {reset}')
+        print(f'button: {len(buttons)} successfully mapped to GPIO {reset}')
         buttons.append(reset)
         reset = len(buttons) - 1
 print(f'reset button: {reset}')
@@ -74,7 +74,7 @@ while enter == '':
     if enter in buttons:
         enter = [i for i, b in enumerate(buttons) if b == enter][0]
     else:
-        print(f'button {len(buttons)}: {enter}')
+        print(f'button: {len(buttons)} successfully mapped to GPIO {enter}')
         buttons.append(enter)
         enter = len(buttons) - 1
 print(f'enter button: {enter}')
