@@ -59,7 +59,9 @@ while reset == '':
     if reset in buttons:
         reset = [i for i, b in enumerate(buttons) if b == reset][0]
     else:
-        reset = ''
+        print(f'button {len(buttons)}: {reset}')
+        buttons.append(reset)
+        reset = len(buttons) - 1
 print(f'reset button: {reset}')
 
 print(f'press enter button')
@@ -69,7 +71,9 @@ while enter == '':
     if enter in buttons:
         enter = [i for i, b in enumerate(buttons) if b == enter][0]
     else:
-        enter = ''
+        print(f'button {len(buttons)}: {enter}')
+        buttons.append(enter)
+        enter = len(buttons) - 1
 print(f'enter button: {enter}')
 
 print('Exiting...')
@@ -106,8 +110,8 @@ lines += [
     '};',
     'const int buttons_size = sizeof(buttons) / sizeof(buttons[0]);',
     '',
-    f'const int reset_button = {reset};',
-    f'const int enter_button = {enter};',
+    f'#define reset_button {reset}',
+    f'#define enter_button {enter}',
     '',
     'int map_buttons[] {',
     '  '+', '.join((str(i) for i in range(len(buttons)))),
