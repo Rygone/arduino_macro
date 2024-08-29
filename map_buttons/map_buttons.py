@@ -59,17 +59,24 @@ reset = ''
 while reset == '':
     reset = serial_.readline().decode('utf-8').strip()
     if reset in buttons:
-        reset = [i for i, b in enumerate(buttons) if b == reset][0]
+        reset = [i for i, b in enumerate(buttons) if ((b == reset) and (i == 0))][0]
+        if reset != 0:
+            print(f'button reset should be 0, you pressed button {reset}\n press again reset button')
+            reset = ''
     else:
         reset = ''
 print(f'reset button: {reset}')
+
 
 print(f'press enter button')
 enter = ''
 while enter == '':
     enter = serial_.readline().decode('utf-8').strip()
     if enter in buttons:
-        enter = [i for i, b in enumerate(buttons) if b == enter][0]
+        enter = [i for i, b in enumerate(buttons) if ((b == enter) and (i == len(buttons)-1))][0]
+        if enter != len(buttons)-1:
+            print(f'button enter should be {len(buttons)-1}, you pressed button {enter}\n press again enter button')
+            enter = ''
     else:
         enter = ''
 print(f'enter button: {enter}')
