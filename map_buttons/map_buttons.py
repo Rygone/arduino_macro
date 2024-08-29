@@ -40,12 +40,13 @@ buttons = []
 #region get buttons
 try:
     while True:
-        print(f'press button {len(buttons)} or press ctrl+c if all buttons are pressed')
+        print(f'\npress button {len(buttons)} or press ctrl+c if all buttons are pressed')
         button = ''
         while button == '':
             button = serial_.readline().decode('utf-8').strip()
             if button in buttons:
-                print(f'button {button} already pressed, press ctrl+c to exit')
+                print(f'button {len(buttons)} already pressed\n')
+                print(f'\npress button {len(buttons)} or press ctrl+c if all buttons are pressed')
                 button = ''
         time.sleep(0.5)
         print(f'button: {len(buttons)} successfully mapped to GPIO {button}')
