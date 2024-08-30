@@ -4,7 +4,6 @@ import sys
 #region utils
 sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 import utils
-print(utils.__dict__)
 
 com, baud = utils.variables()
 

@@ -2,8 +2,11 @@ import os
 import serial
 import serial.tools.list_ports as lp
 
+com_path    = os.path.normpath(os.path.join(os.path.dirname(__file__), 'com.txt'))
+path_map    = os.path.normpath(os.path.join(os.path.dirname(__file__), 'terminal', 'map.txt'))
+path_custom = os.path.normpath(os.path.join(os.path.dirname(__file__), 'terminal', 'custom.txt'))
+
 def variables():
-    com_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'com.txt'))
     com = None
     if os.path.exists(com_path):
         com = open(com_path, 'r').read().strip()
@@ -90,8 +93,6 @@ def setup(com, baud):
         # print('', data)
         serial_.write(data)
 
-    path_map    = os.path.join(os.path.dirname(__file__), 'map.txt')
-    path_custom = os.path.join(os.path.dirname(__file__), 'custom.txt')
     if os.path.isfile(path_map):
         with open(path_map, 'r', encoding='utf-8') as f:
             map_ = {
@@ -142,8 +143,6 @@ def setup(com, baud):
     return serial_, mp, read, write, map_, custom, convert, replace
 
 def save_map(map_, custom):
-    path_map    = os.path.join(os.path.dirname(__file__), 'map.txt')
-    path_custom = os.path.join(os.path.dirname(__file__), 'custom.txt')
     print(f'save map in {path_map}')
     with open(path_map, 'w', encoding='utf-8') as f:
         for k, v in sorted(map_.items()):
