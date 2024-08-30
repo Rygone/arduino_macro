@@ -1,43 +1,19 @@
 import os
-import serial
-import time
+import sys
+from time import sleep
 
-#region variables
-com_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'com.txt'))
-com = None
-if os.path.exists(com_path):
-    com = open(com_path, 'r').read().strip()
-if com is None:
-    print(f'\nFile not found or not correct: {com_path}')
-    print(f'You can save the com port in this file to avoid this message')
-    while com is None:
-        com = input('\nEnter the com port (e.g. COM3): ').strip()
-        if com.startswith('COM') and com[3:].isnumeric():
-            com = f'COM{com[3:]}'
-        elif com.isnumeric():
-            com = f'COM{com}'
-        else:
-            com = None
-baud = 9600
-#endregion
+#region utils
+sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
+import utils
+print(utils.__dict__)
 
-#region setup
-print(f'Port: {com}')
-print(f'Baud: {baud}')
+com, baud = utils.variables()
 
-serial_ = serial.Serial(com, baud)
-serial_.timeout = 1
-print('Connected to serial port')
-
-print(f'Connected: {serial_.is_open}')
-if not serial_.is_open:
-    print('Failed to connect to serial port')
-    exit()
-
-buttons = []
+serial_, mp, read, write, map_, custom, convert, replace = utils.setup(com, baud)
 #endregion
 
 #region get buttons
+buttons = []
 try:
     while True:
         print(f'\npress button {len(buttons)} or press ctrl+c if all buttons are pressed')
@@ -48,7 +24,7 @@ try:
                 print(f'button {len(buttons)} already pressed\n')
                 print(f'\npress button {len(buttons)} or press ctrl+c if all buttons are pressed')
                 button = ''
-        time.sleep(0.5)
+        sleep(0.5)
         print(f'button: {len(buttons)} successfully mapped to GPIO {button}')
         buttons.append(button)
 except KeyboardInterrupt:
@@ -78,11 +54,10 @@ while enter == '':
         buttons.append(enter)
         enter = len(buttons) - 1
 print(f'enter button: {enter}')
+#endregion
 
-print('Exiting...')
-serial_.close()
-
-
+#region utils
+utils.close(serial_)
 #endregion
 
 #region load setup.h
