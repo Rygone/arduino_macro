@@ -2,7 +2,7 @@
 #include "write.h"
 #include "store.h"
 
-#define VERSION             "0.3"
+#define VERSION             "0.4"
 
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
