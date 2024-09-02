@@ -4,28 +4,21 @@
 // define the
 #if defined(ARDUINO_AVR_LEONARDO)
 
-#define DATA_SIZE           32
+#define DATA_SIZE           64
 
-#define EEPROM_LEN          EEPROM.length()
+#define EEPROM_LEN          1024
 #define EEPROM_READ(i)      EEPROM.read(i)
 #define EEPROM_WRITE(i, v)  EEPROM.update(i, v)
-
-// setup the keyboard
-void store_setup() {}
+#define EEPROM_BEGIN()
 
 #else
 
-#define DATA_SIZE           64
+#define DATA_SIZE           128
 
-#define EEPROM_LEN          EEPROM.length()
+#define EEPROM_LEN          4096
 #define EEPROM_READ(i)      EEPROM.read(i)
 #define EEPROM_WRITE(i, v)  {EEPROM.write(i, v); EEPROM.commit();}
-
-// setup the keyboard
-void store_setup() {
-  // start the EEPROM
-  EEPROM.begin(4096);
-}
+#define EEPROM_BEGIN()      EEPROM.begin(EEPROM_LEN)
 
 #endif
 
@@ -34,6 +27,7 @@ void store_setup() {
 #define LONG_DATA_SIZE      (DATA_SIZE/sizeof(long))
 
 const int keys_size = sizeof(cipher_keys) / DATA_SIZE;
+int idxs[EEPROM_LEN / DATA_SIZE] = {0};
 
 typedef union {
   byte          b[DATA_SIZE];
@@ -42,6 +36,27 @@ typedef union {
   unsigned int  u[INT_DATA_SIZE];
   unsigned long l[LONG_DATA_SIZE];
 } data_t;
+
+// setup the keyboard
+void store_setup() {
+  // start the EEPROM
+  EEPROM_BEGIN();
+
+  // load the index
+  for (int i = 0; i < EEPROM_LEN / DATA_SIZE; i++) {
+    idxs[i] = i;
+  }
+  for (int k = keys_size - 1; k >= 0; k--) {
+    for (int i = 0; i < EEPROM_LEN / DATA_SIZE; i++) {
+      unsigned int l = i % DATA_SIZE;
+      l = cipher_keys[k * DATA_SIZE + l];
+      unsigned int j = (i + l) % (EEPROM_LEN / DATA_SIZE);
+      int t = idxs[i];
+      idxs[i] = idxs[j];
+      idxs[j] = t;
+    }
+  }
+}
 
 int read(data_t* data, int i) {
   int j = i / 2;
@@ -76,6 +91,9 @@ bool save_(int idx, data_t* data) {
   if (idx >= len_() || idx < 0) {
     return false;
   }
+
+  // get the index
+  idx = idxs[idx];
 
   // check if null data
   bool all_null = true;
@@ -117,6 +135,9 @@ bool load_(int idx, data_t* data) {
   if (idx >= len_() || idx < 0) {
     return false;
   }
+
+  // get the index
+  idx = idxs[idx];
 
   // load the data
   int offset = idx * DATA_SIZE;

@@ -1,4 +1,4 @@
-# This script shows the algorithm of the cipher in the arduino code.
+# This script shows the algorithm of indexing the memory in the arduino code.
 
 import numpy as np
 
@@ -37,47 +37,14 @@ def shuffle(x, key=None, back=False):
 def shuffle_back(x, key=None):
     return shuffle(x, key, True)
 
-# set text
-txt = 'Hello, World!'
-print(txt)
+# set index
+len_ = 32
+idxs = [i for i in range(len_)]
 
-# encode
-txt = [ord(c) for c in txt]
-txt += [0, 0]
-txt += (np.random.rand(len_) * 256).astype(int).tolist()
+# shuffle
+for i in range(4):
+    idxs = shuffle(idxs, key[i])
 
-# encrypt
-enum = list(enumerate(key))
-for i, k in reversed(enum):
-    # print(i)
-    txt = cipher(txt, k)
-    txt = shuffle_back(txt)
-
-# print cipher text
-for i in txt:
-    print(i, end=' ')
-print()
-
-# add an error
-# txt[-1] += 1
-
-# decrypt
-for i, k in enum:
-    # print(i)
-    txt = shuffle(txt)
-    txt = cipher(txt, k)
-
-# decode
-idx = [
-    i
-    for i in range(len(txt) - 1)
-    if txt[i] == 0 and txt[i + 1] == 0
-]
-if len(idx) > 0:
-    idx = idx[0]
-    txt = txt[:idx]
-
-txt = ''.join([chr(i) for i in txt])
-
-# print output
-print(txt)
+print("idxs :")
+for i, idx in enumerate(idxs):
+    print(f'{idx:2d}', end=' ' if i%8!=7 else '\n')

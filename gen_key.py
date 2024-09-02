@@ -3,7 +3,8 @@ import numpy as np
 
 #region user parameters
 nb_key = 4
-len_key = 32
+len_key = 64
+nb_lines = 4
 #endregion
 
 #region load setup.h
@@ -31,15 +32,15 @@ len_key >>= 1
 val_max = 0xFFFF + 1
 lines += [
     '#pragma region Keys',
-    f'const unsigned int cipher_keys[] = {{',
+    'const unsigned int cipher_keys[] = {',
 ]
-for i in range(nb_key * 2):
+for i in range(nb_key * nb_lines):
     key = [
         f'0x{i:04X}'
-        for i in (np.random.rand(len_key//2) * val_max).astype(int).tolist()
+        for i in (np.random.rand(len_key//nb_lines) * val_max).astype(int).tolist()
     ]
     lines += ['  ' + ','.join(key) + ',']
-    if i % 2 == 1:
+    if i % nb_lines == nb_lines-1:
         lines += ['']
 lines = lines[:-1]
 lines += [

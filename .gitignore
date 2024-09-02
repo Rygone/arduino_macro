@@ -3,3 +3,4 @@ terminal/custom.txt
 terminal/map.txt
 com.txt
 arduino_macro/back
+__pycache__
