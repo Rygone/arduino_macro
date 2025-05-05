@@ -2,7 +2,7 @@
 #include "write.h"
 #include "store.h"
 
-#define VERSION             "0.4"
+#define VERSION             "0.5"
 
 // select the pins to use
 #if defined(ARDUINO_AVR_LEONARDO)
@@ -25,6 +25,7 @@
 
 // define the buttons
 bool lock = true;
+bool reset = false;
 unsigned long btn_key = 0;
 unsigned long btn_time = 0;
 
@@ -36,9 +37,8 @@ typedef struct {
 } command_t;
 
 void setup() {
-
   // check if the key is valid
-  get_true_key();
+  // get_true_key();
 
   // set the lock
   lock = true;
@@ -92,14 +92,13 @@ int extract_int(String* data_ptr) {
   }
 
   // extract the number
-  String data = *data_ptr;
   bool hexa = false;
   int multiplier = 10;
   int idx = 0;
-  char* c = (char*)data.c_str();
+  char* c = (char*)data_ptr->c_str();
 
   // detect if it is a hexa number
-  if (data[0] == '0' && (data[1] == 'x' || data[1] == 'X')) {
+  if ((*data_ptr)[0] == '0' && ((*data_ptr)[1] == 'x' || (*data_ptr)[1] == 'X')) {
     hexa = true;
     multiplier = 16;
     c += 2;
@@ -122,7 +121,7 @@ int extract_int(String* data_ptr) {
     }
   }
 
-  *data_ptr = data.substring(c - data.c_str() + 1);
+  *data_ptr = data_ptr->substring(c - data_ptr->c_str() + 1);
   return idx;
 }
 
@@ -131,11 +130,7 @@ void send(String data) {
 }
 
 void send_locked() {
-  if (lock) {
-    send("Device is locked");
-  } else {
-    send("Device is unlocked");
-  }
+    send(lock ? "Device is locked" : "Device is unlocked");
 }
 
 bool check_idx_(int* idx) {
@@ -193,26 +188,41 @@ void load(String data) {
   send(str);
 }
 
+#define clear_idx(idx)              \
+  for (i = 2; i < DATA_SIZE; i++) { \
+    char r = (char)random(32, 127); \
+    d.c[i] = r;                     \
+  }                                 \
+  if (!save_(idx, &d)) {            \
+    send("Error in clearing");      \
+  }
+
+void reset_clear() {
+  data_t d;
+  int i = 0;
+  d.b[i++] = 0;
+  d.b[i++] = 0;
+  for (i = 2; i < DATA_SIZE; i++) {
+    d.c[i] = 0;
+  }
+  if (!save_(0, &d)) {
+    send("Error in clearing");
+  }
+  for (int idx = DATA_OFFSET; idx < len_() - DATA_CUT; idx++) {
+    clear_idx(idx);
+  }
+}
+
 void clear(String data) {
+  data_t d;
+  int i = 0;
+  d.b[i++] = 0;
+  d.b[i++] = 0;
+
   if (data.length() == 0) {
     // clear the data
-    data_t d;
-    int i = 0;
-    d.b[++i] = 0;
-    d.b[++i] = 0;
-
-    // iterate over the data
     for (int idx = DATA_OFFSET; idx < len_() - DATA_CUT; idx++) {
-      for (i = 2; i < DATA_SIZE; i++) {
-        char r = (char)random(32, 127);
-        d.c[i] = r;
-      }
-
-      // save the data
-      if (!save_(idx, &d)) {
-        send("Error in saving");
-        return;
-      }
+      clear_idx(idx)
     }
   } else {
     // extract the index
@@ -220,19 +230,7 @@ void clear(String data) {
     check_idx(idx);
 
     // clear the data
-    data_t d;
-    int i = 0;
-    d.b[i++] = 0;
-    d.b[i++] = 0;
-    for (; i < DATA_SIZE; i++) {
-      char r = (char)random(32, 127);
-      d.c[i] = r;
-    }
-
-    // send result
-    if (!save_(idx, &d)) {
-      send("Error in clearing");
-    }
+    clear_idx(idx)
   }
   send("Cleared");
 }
@@ -254,8 +252,9 @@ void keycode(String data) {
   }
 }
 
-// write the data
 void write_(String data) {
+  // write the data
+
   // stop serial
   Serial.end();
   delay(10);
@@ -283,7 +282,9 @@ unsigned long get_true_key() {
   load_(0, &d);
   for (int i = 1; i < LONG_DATA_SIZE; i++) {
     if (d.l[i] != d.l[0]) {
-      clear_();
+      // reset the data as it is corrupted
+      reset = true;
+      // reset_clear();
       return 0;
     }
   }
@@ -304,7 +305,7 @@ bool unlock(unsigned long key) {
 bool extract_key(String data, unsigned long* key) {
   *key = 0;
   for (int i = 0; i < data.length(); i++) {
-    if(data[i] <= '0' || data[i] > '0' + buttons_size - 2) {
+    if(data[i] < '0' || data[i] > '0' + buttons_size - 2) {
       return false;
     }
     int p = data[i] - '0';
@@ -323,7 +324,7 @@ void set_key(String data) {
   for (int i = 0; i < LONG_DATA_SIZE; i++) {
     d.l[i] = key;
   }
-  if (!save_(0, &d)){
+  if (!save_(0, &d)) {
     send("Error in saving");
     return;
   }
@@ -339,14 +340,14 @@ void get_key() {
       key += String(c);
     }
   }
-  if (key.length() == 0){
+  if (key.length() == 0) {
     key += "0";
   }
   send(key);
 }
 
 void key_(String data) {
-  if (data.length() > 0){
+  if (data.length() > 0) {
     set_key(data);
   } else {
     get_key();
@@ -362,7 +363,7 @@ void unlock_(String data) {
   if (unlock(key)) {
     send("Device unlocked");
   } else {
-    send("Invalid key");
+    send(reset ? "Device is reset" : "Invalid key");
   }
 }
 
@@ -376,6 +377,7 @@ void info(String data) {
   send("Version: " VERSION);
   send("Baud rate: " + String(BAUD_RATE));
   send("Timeout: " + String(TIMEOUT));
+  send(reset ? "Reset: true" : "Reset: false");
   send_locked();
 }
 

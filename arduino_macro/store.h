@@ -206,12 +206,3 @@ bool data_to_str(data_t* data, String* str) {
 
   return true;
 }
-
-bool clear_() {
-  // clear the data
-  for (int i = 0; i < EEPROM.length(); i++) {
-    EEPROM_WRITE(i, 0);
-  }
-
-  return true;
-}

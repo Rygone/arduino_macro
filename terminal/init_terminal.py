@@ -37,7 +37,10 @@ for group in [
 all_key = "`1234567890-=qwertyuiopasdfghjklzxcvbnm[];\'\\,./"
 for key in all_key:
     write(f'echo ♣♥{key}{key}♠♦¶')
-    string_keyboard = input()
+    try:
+        string_keyboard = input()
+    except KeyboardInterrupt:
+        string_keyboard = ''
     string_serial = read()
     if len(string_keyboard) > 0:
         string_keyboard = string_keyboard[0]
